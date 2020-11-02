@@ -1,0 +1,5 @@
+/checkpoint/pretrain/pytorch_model.bin
+/checkpoint/pretrain/chinese_wwm_pytorch.bin
+/.idea
+/checkpoint/finetune
+/test.py
