@@ -15,6 +15,12 @@ class SMBbertEmbeddings(nn.Module):
         self.emb_dropout = nn.Dropout(p=dropout_prob)
 
     def forward(self, input_token, segment_ids):
+        # mask embeddings
+        token_size = input_token.size()
+        mask_tensor = torch.LongTensor(token_size).fill_(103)
+        mask_embeddings = self.token_embeddings(mask_tensor)
+
+        # embeddings
         token_embeddings = self.token_embeddings(input_token)
         type_embeddings = self.type_embeddings(segment_ids)
         # 生成固定位置信息
@@ -28,18 +34,5 @@ class SMBbertEmbeddings(nn.Module):
         embedding_x = token_embeddings + type_embeddings + postion_embeddings
         embedding_x = self.emb_normalization(embedding_x)
         embedding_x = self.emb_dropout(embedding_x)
-        return embedding_x
 
-
-class MaskEmbeddings(nn.Module):
-    def __init__(self, vocab_size, hidden_size, dropout_prob=0.1):
-        super(MaskEmbeddings, self).__init__()
-        self.mask_embeddings = nn.Embedding(vocab_size, hidden_size)
-        self.emb_normalization = nn.LayerNorm(hidden_size)
-        self.emb_dropout = nn.Dropout(p=dropout_prob)
-
-    def forward(self, input_token):
-        mask_embeddings = self.mask_embeddings(input_token)
-        embedding_x = self.emb_normalization(mask_embeddings)
-        embedding_x = self.emb_dropout(embedding_x)
-        return embedding_x
+        return embedding_x, mask_embeddings

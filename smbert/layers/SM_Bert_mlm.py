@@ -4,7 +4,7 @@ import torch.nn as nn
 from pretrain_config import *
 from smbert.common.tokenizers import Tokenizer
 from smbert.layers.Transformer import Transformer
-from smbert.layers.SMBertEmbeddings import SMBbertEmbeddings, MaskEmbeddings
+from smbert.layers.SMBertEmbeddings import SMBbertEmbeddings
 from smbert.layers.Mlm import Mlm
 from smbert.layers.BiGRU import BiGRU
 
@@ -32,9 +32,8 @@ class SMBertMlm(nn.Module):
 
         # 申明网络
         self.smbert_emd = SMBbertEmbeddings(vocab_size=self.vocab_size, max_len=self.max_len, hidden_size=self.hidden_size)
-        self.mask_emd = MaskEmbeddings(vocab_size=self.vocab_size, hidden_size=self.hidden_size)
         self.bi_gru = BiGRU(self.hidden_size, self.hidden_size)
-        self.simoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
         self.transformer_blocks = nn.ModuleList(
             Transformer(
                 hidden_size=self.hidden_size,
@@ -76,14 +75,13 @@ class SMBertMlm(nn.Module):
         # embedding
         if Debug:
             print('获取embedding %s' % get_time())
-        embedding_x = self.smbert_emd(input_token, segment_ids)
-        mask_embedding_x = self.mask_emd(input_token)
+        embedding_x, mask_embedding_x = self.smbert_emd(input_token, segment_ids)
         if Debug:
             print('获取attention_mask %s' % get_time())
 
         # error detection
         bi_gru_x = self.bi_gru(embedding_x)
-        pi = self.simoid(bi_gru_x)
+        pi = self.sigmoid(bi_gru_x)
         embedding_i = pi * mask_embedding_x + (1 - pi) * embedding_x
 
         # transformer
