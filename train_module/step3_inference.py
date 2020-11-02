@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 from char_sim import CharFuncs
 from pretrain_config import FinetunePath, device, PronunciationPath, SentenceLength
-from roberta.data.mlm_dataset import DataFactory
+from smbert.data.mlm_dataset import DataFactory
 
 
 def get_finetune_model_parameters():

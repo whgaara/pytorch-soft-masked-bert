@@ -4,7 +4,7 @@ import pkuseg
 import numpy as np
 
 from tqdm import tqdm
-from roberta.common.tokenizers import Tokenizer
+from smbert.common.tokenizers import Tokenizer
 from pretrain_config import *
 from torch.utils.data import Dataset
 
@@ -36,7 +36,7 @@ class DataFactory(object):
         texts_ids = []
         for text in texts:
             # 处理每个句子
-            if ModelClass == 'RobertaMlm':
+            if ModelClass == 'SMBertMlm':
                 # 注意roberta里并不是针对每个字进行mask，而是对字或者词进行mask
                 words = self.seg.cut(text)
                 for word in words:
@@ -160,7 +160,7 @@ class RobertaDataSet(Dataset):
                         else:
                             self.tokenid_to_count[tokenid] = 1
         for line in self.src_lines:
-            if ModelClass == 'RobertaMlm':
+            if ModelClass == 'SMBertMlm':
                 instances = self.roberta_data.ids_to_mask(line)
             else:
                 instances = self.roberta_data.ids_all_mask(line, self.tokenid_to_count)
@@ -168,7 +168,7 @@ class RobertaDataSet(Dataset):
                 self.tar_lines.append(instance)
 
     def __get_texts(self, mode=ModelClass):
-        if mode == 'RobertaMlm':
+        if mode == 'SMBertMlm':
             count, texts = 0, []
             with open(self.corpus_path, 'r', encoding='utf-8') as f:
                 for line in f:

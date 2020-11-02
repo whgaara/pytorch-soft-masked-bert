@@ -9,7 +9,7 @@ def check_srcdata_and_vocab(target_path):
     local_tokens = []
     vocabs = []
     missing = []
-    if ModelClass == 'RobertaMlm':
+    if ModelClass == 'SMBertMlm':
         for l in f1:
             if l:
                 l = l.strip()

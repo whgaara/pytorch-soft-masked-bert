@@ -34,7 +34,7 @@ if ModelClass == 'Bert':
     BatchSize = 16
     SentenceLength = 128
     PretrainPath = '../../checkpoint/finetune/mlm_trained_%s.model' % SentenceLength
-if ModelClass == 'RobertaMlm':
+if ModelClass == 'SMBertMlm':
     RepeatNum = 10
     BatchSize = 1
     SentenceLength = 512

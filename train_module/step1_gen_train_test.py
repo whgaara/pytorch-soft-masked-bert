@@ -2,7 +2,7 @@ import random
 
 from common import check_srcdata_and_vocab
 from pretrain_config import *
-from roberta.common.tokenizers import Tokenizer
+from smbert.common.tokenizers import Tokenizer
 
 
 def random_wrong(text):

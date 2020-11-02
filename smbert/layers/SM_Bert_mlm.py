@@ -2,13 +2,13 @@ import os
 import torch.nn as nn
 
 from pretrain_config import *
-from roberta.common.tokenizers import Tokenizer
-from roberta.layers.Transformer import Transformer
-from roberta.layers.SMBertEmbeddings import RobertaEmbeddings
-from roberta.layers.Mlm import Mlm
+from smbert.common.tokenizers import Tokenizer
+from smbert.layers.Transformer import Transformer
+from smbert.layers.SMBertEmbeddings import RobertaEmbeddings
+from smbert.layers.Mlm import Mlm
 
 
-class RobertaMlm(nn.Module):
+class SMBertMlm(nn.Module):
     def __init__(self,
                  vocab_size=VocabSize,
                  hidden=HiddenSize,
@@ -18,7 +18,7 @@ class RobertaMlm(nn.Module):
                  dropout_prob=DropOut,
                  intermediate_size=IntermediateSize
                  ):
-        super(RobertaMlm, self).__init__()
+        super(SMBertMlm, self).__init__()
         self.vocab_size = vocab_size
         self.hidden_size = hidden
         self.max_len = max_len

@@ -5,15 +5,15 @@ import torch.nn as nn
 
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from roberta.data.mlm_dataset import *
-from roberta.layers.SM_Bert_mlm import RobertaMlm
+from smbert.data.mlm_dataset import *
+from smbert.layers.SM_Bert_mlm import SMBertMlm
 
 
 if __name__ == '__main__':
     if Debug:
         print('开始训练 %s' % get_time())
     onehot_type = False
-    roberta = RobertaMlm().to(device)
+    roberta = SMBertMlm().to(device)
     if Debug:
         print('Total Parameters:', sum([p.nelement() for p in roberta.parameters()]))
 
