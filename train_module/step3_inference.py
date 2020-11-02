@@ -45,7 +45,7 @@ class Inference(object):
         self.mode = mode
         self.model = torch.load(FinetunePath).to(device).eval()
         self.char_func = CharFuncs(PronunciationPath)
-        self.roberta_data = DataFactory()
+        self.smbert_data = DataFactory()
         print('加载模型完成！')
 
     def get_id_from_text(self, text):
@@ -53,8 +53,8 @@ class Inference(object):
         inputs = []
         segments = []
         text = [text]
-        ids = self.roberta_data.texts_to_ids(text)
-        inputs.append(self.roberta_data.token_cls_id)
+        ids = self.smbert_data.texts_to_ids(text)
+        inputs.append(self.smbert_data.token_cls_id)
         segments.append(1)
         for id in ids:
             if len(inputs) < SentenceLength - 1:
@@ -66,7 +66,7 @@ class Inference(object):
                     inputs.append(id)
                     segments.append(1)
             else:
-                inputs.append(self.roberta_data.token_sep_id)
+                inputs.append(self.smbert_data.token_sep_id)
                 segments.append(1)
                 break
 
@@ -75,11 +75,11 @@ class Inference(object):
             return None
 
         if len(inputs) < SentenceLength - 1:
-            inputs.append(self.roberta_data.token_sep_id)
+            inputs.append(self.smbert_data.token_sep_id)
             segments.append(1)
             for i in range(SentenceLength - len(inputs)):
-                inputs.append(self.roberta_data.token_pad_id)
-                segments.append(self.roberta_data.token_pad_id)
+                inputs.append(self.smbert_data.token_pad_id)
+                segments.append(self.smbert_data.token_pad_id)
 
         inputs = torch.tensor(inputs).unsqueeze(0).to(device)
         segments = torch.tensor(segments).unsqueeze(0).to(device)
@@ -97,7 +97,7 @@ class Inference(object):
             for i, words in enumerate(output_topk_indice):
                 tmp = []
                 for j, candidate in enumerate(words):
-                    word = self.roberta_data.tokenizer.id_to_token(candidate)
+                    word = self.smbert_data.tokenizer.id_to_token(candidate)
                     tmp.append(word)
                 result.append(tmp)
         return result, output_topk_prob

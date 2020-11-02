@@ -128,13 +128,13 @@ class SMBertDataSet(Dataset):
     def __init__(self, corpus_path, onehot_type=False):
         self.corpus_path = corpus_path
         self.onehot_type = onehot_type
-        self.roberta_data = DataFactory()
+        self.smbert_data = DataFactory()
         self.src_lines = []
         self.tar_lines = []
         self.tokenid_to_count = {}
         for i in range(RepeatNum):
             for texts in tqdm(self.__get_texts()):
-                texts_ids = self.roberta_data.texts_to_ids(texts)
+                texts_ids = self.smbert_data.texts_to_ids(texts)
                 self.src_lines.append(texts_ids)
                 # 收集词频
                 for tokenids in texts_ids:
@@ -151,7 +151,7 @@ class SMBertDataSet(Dataset):
                         else:
                             self.tokenid_to_count[tokenid] = 1
         for line in self.src_lines:
-            instances = self.roberta_data.ids_all_mask(line, self.tokenid_to_count)
+            instances = self.smbert_data.ids_all_mask(line, self.tokenid_to_count)
             for instance in instances:
                 self.tar_lines.append(instance)
 
