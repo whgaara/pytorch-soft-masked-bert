@@ -17,7 +17,7 @@ class SMBbertEmbeddings(nn.Module):
     def forward(self, input_token, segment_ids):
         # mask embeddings
         token_size = input_token.size()
-        mask_tensor = torch.LongTensor(token_size).fill_(103)
+        mask_tensor = torch.LongTensor(token_size).fill_(103).to(device)
         mask_embeddings = self.token_embeddings(mask_tensor)
 
         # embeddings
