@@ -36,20 +36,11 @@ class DataFactory(object):
         texts_ids = []
         for text in texts:
             # 处理每个句子
-            if ModelClass == 'SMBertMlm':
-                # 注意roberta里并不是针对每个字进行mask，而是对字或者词进行mask
-                words = self.seg.cut(text)
-                for word in words:
-                    # text_ids首位分别是cls和sep，这里暂时去除
-                    word_tokes = self.tokenizer.tokenize(text=word)[1:-1]
-                    words_ids = self.tokenizer.tokens_to_ids(word_tokes)
-                    texts_ids.append(words_ids)
-            else:
-                for word in text:
-                    # text_ids首位分别是cls和sep，这里暂时去除
-                    word_tokes = self.tokenizer.tokenize(text=word)[1:-1]
-                    words_ids = self.tokenizer.tokens_to_ids(word_tokes)
-                    texts_ids.append(words_ids)
+            for word in text:
+                # text_ids首位分别是cls和sep，这里暂时去除
+                word_tokes = self.tokenizer.tokenize(text=word)[1:-1]
+                words_ids = self.tokenizer.tokens_to_ids(word_tokes)
+                texts_ids.append(words_ids)
         return texts_ids
 
     def ids_to_mask(self, texts_ids):
@@ -133,7 +124,7 @@ class DataFactory(object):
         return instances
 
 
-class RobertaDataSet(Dataset):
+class SMBertDataSet(Dataset):
     def __init__(self, corpus_path, onehot_type=False):
         self.corpus_path = corpus_path
         self.onehot_type = onehot_type
@@ -160,33 +151,15 @@ class RobertaDataSet(Dataset):
                         else:
                             self.tokenid_to_count[tokenid] = 1
         for line in self.src_lines:
-            if ModelClass == 'SMBertMlm':
-                instances = self.roberta_data.ids_to_mask(line)
-            else:
-                instances = self.roberta_data.ids_all_mask(line, self.tokenid_to_count)
+            instances = self.roberta_data.ids_all_mask(line, self.tokenid_to_count)
             for instance in instances:
                 self.tar_lines.append(instance)
 
-    def __get_texts(self, mode=ModelClass):
-        if mode == 'SMBertMlm':
-            count, texts = 0, []
-            with open(self.corpus_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    texts.append(line)
-                    count += 1
-                    # 10个句子组成一个段落
-                    if count == 10:
-                        yield texts
-                        count, texts = 0, []
-            if texts:
-                yield texts
-
-        if mode == 'Bert':
-            with open(self.corpus_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    yield [line]
+    def __get_texts(self):
+        with open(self.corpus_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                yield [line]
 
     def __len__(self):
         return len(self.tar_lines)

@@ -13,32 +13,27 @@ if __name__ == '__main__':
     if Debug:
         print('开始训练 %s' % get_time())
     onehot_type = False
-    roberta = SMBertMlm().to(device)
+    soft_masked_bert = SMBertMlm().to(device)
     if Debug:
-        print('Total Parameters:', sum([p.nelement() for p in roberta.parameters()]))
+        print('Total Parameters:', sum([p.nelement() for p in soft_masked_bert.parameters()]))
 
-    if UsePretrain and os.path.exists(PretrainPath):
-        if SentenceLength == 512:
-            print('开始加载预训练模型！')
-            roberta.load_pretrain(SentenceLength)
-            print('完成加载预训练模型！')
-        else:
-            print('开始加载本地模型！')
-            roberta.load_pretrain(SentenceLength)
-            print('完成加载本地模型！')
+    if os.path.exists(PretrainPath):
+        print('开始加载预训练模型！')
+        soft_masked_bert.load_pretrain(PretrainPath)
+        print('完成加载预训练模型！')
 
-    dataset = RobertaDataSet(CorpusPath, onehot_type)
+    dataset = SMBertDataSet(CorpusPath, onehot_type)
     dataloader = DataLoader(dataset=dataset, batch_size=BatchSize, shuffle=True, drop_last=True)
     testset = RobertaTestSet(TestPath)
 
-    optim = Adam(roberta.parameters(), lr=MLMLearningRate)
+    optim = Adam(soft_masked_bert.parameters(), lr=MLMLearningRate)
     criterion = nn.CrossEntropyLoss().to(device)
 
     for epoch in range(MLMEpochs):
         # train
         if Debug:
             print('第%s个Epoch %s' % (epoch, get_time()))
-        roberta.train()
+        soft_masked_bert.train()
         data_iter = tqdm(enumerate(dataloader),
                          desc='EP_%s:%d' % ('train', epoch),
                          total=len(dataloader),
@@ -53,7 +48,7 @@ if __name__ == '__main__':
             label = data['token_ids_labels']
             if Debug:
                 print('获取数据 %s' % get_time())
-            mlm_output = roberta(input_token, segment_ids).permute(0, 2, 1)
+            mlm_output = soft_masked_bert(input_token, segment_ids).permute(0, 2, 1)
             if Debug:
                 print('完成前向 %s' % get_time())
             mask_loss = criterion(mlm_output, label)
@@ -68,13 +63,13 @@ if __name__ == '__main__':
 
         # save
         output_path = FinetunePath + '.ep%d' % epoch
-        torch.save(roberta.cpu(), output_path)
-        roberta.to(device)
+        torch.save(soft_masked_bert.cpu(), output_path)
+        soft_masked_bert.to(device)
         print('EP:%d Model Saved on:%s' % (epoch, output_path))
 
         # test
         with torch.no_grad():
-            roberta.eval()
+            soft_masked_bert.eval()
             test_count = 0
             top1_count = 0
             top5_count = 0
@@ -84,7 +79,7 @@ if __name__ == '__main__':
                 input_token_list = input_token.tolist()
                 input_len = len([x for x in input_token_list[0] if x]) - 2
                 label_list = test_data['token_ids_labels'].tolist()
-                mlm_output = roberta(input_token, segment_ids)[:, 1:input_len + 1, :]
+                mlm_output = soft_masked_bert(input_token, segment_ids)[:, 1:input_len + 1, :]
                 output_tensor = torch.nn.Softmax(dim=-1)(mlm_output)
                 output_topk = torch.topk(output_tensor, 5).indices.squeeze(0).tolist()
 

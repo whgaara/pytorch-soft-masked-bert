@@ -4,8 +4,9 @@ import torch.nn as nn
 from pretrain_config import *
 from smbert.common.tokenizers import Tokenizer
 from smbert.layers.Transformer import Transformer
-from smbert.layers.SMBertEmbeddings import RobertaEmbeddings
+from smbert.layers.SMBertEmbeddings import SMBbertEmbeddings, MaskEmbeddings
 from smbert.layers.Mlm import Mlm
+from smbert.layers.BiGRU import BiGRU
 
 
 class SMBertMlm(nn.Module):
@@ -30,7 +31,11 @@ class SMBertMlm(nn.Module):
         self.intermediate_size = intermediate_size
 
         # 申明网络
-        self.roberta_emd = RobertaEmbeddings(vocab_size=self.vocab_size, max_len=self.max_len, hidden_size=self.hidden_size)
+        self.roberta_emd = SMBbertEmbeddings(vocab_size=self.vocab_size, max_len=self.max_len, hidden_size=self.hidden_size)
+        self.mask_emd = MaskEmbeddings(vocab_size=self.vocab_size, hidden_size=self.hidden_size)
+        self.bi_gru = BiGRU(self.hidden_size, self.hidden_size)
+        self.gru_dense = nn.Linear(self.hidden_size, self.hidden_size)
+        self.simoid = nn.Sigmoid()
         self.transformer_blocks = nn.ModuleList(
             Transformer(
                 hidden_size=self.hidden_size,
@@ -63,27 +68,9 @@ class SMBertMlm(nn.Module):
             attention_masks.append(attention_mask.tolist())
         return torch.tensor(attention_masks)
 
-    def load_pretrain(self, sen_length, path=PretrainPath):
+    def load_pretrain(self, path=PretrainPath):
         pretrain_model_dict = torch.load(path)
-
-        if sen_length == 512:
-            finetune_model_dict = self.state_dict()
-            new_parameter_dict = {}
-            # 加载embedding层参数
-            for key in local2target_emb:
-                local = key
-                target = local2target_emb[key]
-                new_parameter_dict[local] = pretrain_model_dict[target]
-            # 加载transformerblock层参数
-            for i in range(self.num_hidden_layers):
-                for key in local2target_transformer:
-                    local = key % i
-                    target = local2target_transformer[key] % i
-                    new_parameter_dict[local] = pretrain_model_dict[target]
-            finetune_model_dict.update(new_parameter_dict)
-        else:
-            finetune_model_dict = pretrain_model_dict.state_dict()
-
+        finetune_model_dict = pretrain_model_dict.state_dict()
         self.load_state_dict(finetune_model_dict)
 
     def forward(self, input_token, segment_ids):
@@ -91,15 +78,23 @@ class SMBertMlm(nn.Module):
         if Debug:
             print('获取embedding %s' % get_time())
         embedding_x = self.roberta_emd(input_token, segment_ids)
+        mask_embedding_x = self.mask_emd(input_token)
         if Debug:
             print('获取attention_mask %s' % get_time())
+
+        # error detection
+        bi_gru_x = self.bi_gru(embedding_x)
+        bi_gru_x = self.gru_dense(bi_gru_x)
+        pi = self.simoid(bi_gru_x)
+        embedding_i = pi * mask_embedding_x + (1 - pi) * embedding_x
+
+        # transformer
         attention_mask = self.gen_attention_masks(segment_ids).to(device)
         feedforward_x = None
-        # transformer
         for i in range(self.num_hidden_layers):
             if Debug:
                 print('获取第%s个transformer-block %s' % (i, get_time()))
-            feedforward_x = self.transformer_blocks[i](embedding_x, attention_mask)
+            feedforward_x = self.transformer_blocks[i](embedding_i, attention_mask)
         # mlm
         if Debug:
             print('进行mlm全连接 %s' % get_time())

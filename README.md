@@ -1,4 +1,4 @@
-# 无炫技：最直接的Bert和Roberta
+# 无炫技：Soft-Masked-Bert 复现（代码未开发完成以下内容无效）
 - 更清晰、更轻量级的torch版bert
 - csdn：https://blog.csdn.net/BmwGaara
 - 知乎：https://zhuanlan.zhihu.com/c_1264223811643252736
