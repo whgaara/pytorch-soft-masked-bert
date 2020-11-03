@@ -191,4 +191,4 @@ class Inference(object):
 
 if __name__ == '__main__':
     bert_infer = Inference()
-    bert_infer.inference_batch('../../data/test_data/test.txt')
+    bert_infer.inference_batch('../data/test_data/test.txt')
