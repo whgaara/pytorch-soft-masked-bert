@@ -5,24 +5,8 @@ import torch
 
 from tqdm import tqdm
 from char_sim import CharFuncs
-from pretrain_config import FinetunePath, device, PronunciationPath, SentenceLength
+from pretrain_config import PretrainPath, device, PronunciationPath, SentenceLength
 from smbert.data.mlm_dataset import DataFactory
-
-
-def get_finetune_model_parameters():
-    model = torch.load('checkpoint/finetune/mlm_trained_128.model')
-    layers = model.state_dict().keys()
-    for layer in layers:
-        print(layer)
-    return model.state_dict()
-
-
-def get_pretrain_model_parameters():
-    model = torch.load('checkpoint/pretrain/pytorch_model.bin')
-    layers = dict(model).keys()
-    for layer in layers:
-        print(layer)
-    return dict(model)
 
 
 def curve(confidence, similarity):
@@ -43,7 +27,7 @@ class Inference(object):
         self.sen_invalid = 0
         self.sen_wrong = 0
         self.mode = mode
-        self.model = torch.load(FinetunePath).to(device).eval()
+        self.model = torch.load(PretrainPath).to(device).eval()
         self.char_func = CharFuncs(PronunciationPath)
         self.smbert_data = DataFactory()
         print('加载模型完成！')
