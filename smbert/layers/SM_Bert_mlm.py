@@ -91,8 +91,12 @@ class SMBertMlm(nn.Module):
             if Debug:
                 print('获取第%s个transformer-block %s' % (i, get_time()))
             feedforward_x = self.transformer_blocks[i](embedding_i, attention_mask)
+
+        # residual connection
+        residual_x = embedding_x + feedforward_x
+
         # mlm
         if Debug:
             print('进行mlm全连接 %s' % get_time())
-        output = self.mlm(feedforward_x)
+        output = self.mlm(residual_x)
         return output
