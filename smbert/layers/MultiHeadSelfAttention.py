@@ -9,13 +9,11 @@ class MultiHeadSelfAttention(nn.Module):
     def __init__(self,
                  attention_head_num,
                  attention_head_size,
-                 size_per_head=HiddenSize/AttentionHeadNum,
                  dropout_prob=0.1
                  ):
         super(MultiHeadSelfAttention, self).__init__()
         self.attention_head_num = attention_head_num
         self.attention_head_size = attention_head_size
-        self.size_per_head = size_per_head
         self.out_dim = attention_head_num * attention_head_size
 
         # 申明网络
@@ -48,7 +46,7 @@ class MultiHeadSelfAttention(nn.Module):
         # q与k的转置相乘得到：[batch_size, head, seq_len, seq_len]
         attention_scores = torch.matmul(q, k.transpose(2, 3))
         # 因为q、k相乘，结果变大，因此对结果除以根号512
-        attention_scores = attention_scores / math.sqrt(float(self.size_per_head))
+        attention_scores = attention_scores / math.sqrt(float(self.attention_head_size))
 
         # 防止padding补全的0经过softmax后影响结果，对每个0值都加一个很大的负数，这样softmax后也会约等于0
         # attention_mask的shape为：[batch_size, seq_len, seq_len]
