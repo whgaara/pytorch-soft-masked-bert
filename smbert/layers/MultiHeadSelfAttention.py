@@ -9,7 +9,7 @@ class MultiHeadSelfAttention(nn.Module):
     def __init__(self,
                  attention_head_num,
                  attention_head_size,
-                 size_per_head=SentenceLength,
+                 size_per_head=HiddenSize/AttentionHeadNum,
                  dropout_prob=0.1
                  ):
         super(MultiHeadSelfAttention, self).__init__()
