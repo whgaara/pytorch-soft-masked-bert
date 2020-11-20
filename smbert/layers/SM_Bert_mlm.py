@@ -90,7 +90,10 @@ class SMBertMlm(nn.Module):
         for i in range(self.num_hidden_layers):
             if Debug:
                 print('获取第%s个transformer-block %s' % (i, get_time()))
-            feedforward_x = self.transformer_blocks[i](embedding_i, attention_mask)
+            if i == 0:
+                feedforward_x = self.transformer_blocks[i](embedding_i, attention_mask)
+            else:
+                feedforward_x = self.transformer_blocks[i](feedforward_x, attention_mask)
 
         # residual connection
         residual_x = embedding_x + feedforward_x
