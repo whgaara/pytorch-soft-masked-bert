@@ -2,12 +2,14 @@ import math
 import torch
 import torch.nn as nn
 
+from pretrain_config import *
+
 
 class MultiHeadSelfAttention(nn.Module):
     def __init__(self,
                  attention_head_num,
                  attention_head_size,
-                 size_per_head=512,
+                 size_per_head=SentenceLength,
                  dropout_prob=0.1
                  ):
         super(MultiHeadSelfAttention, self).__init__()
