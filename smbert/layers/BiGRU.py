@@ -13,6 +13,7 @@ class BiGRU(nn.Module):
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             dropout=self.dropout,
+            batch_first=True,
             bidirectional=True
         )
         self.bi_gru_dense = nn.Linear(self.hidden_size * 2, self.hidden_size)

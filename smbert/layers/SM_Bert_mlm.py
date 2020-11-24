@@ -80,6 +80,7 @@ class SMBertMlm(nn.Module):
             print('获取attention_mask %s' % get_time())
 
         # error detection
+        # 这里要严格符合GRU模块的输入size，内部已将batch_first改为True
         bi_gru_x = self.bi_gru(embedding_x)
         pi = self.sigmoid(bi_gru_x)
         embedding_i = pi * mask_embedding_x + (1 - pi) * embedding_x
