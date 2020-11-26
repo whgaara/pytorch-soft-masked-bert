@@ -86,7 +86,10 @@ class SMBertMlm(nn.Module):
         embedding_i = pi * mask_embedding_x + (1 - pi) * embedding_x
 
         # transformer
-        attention_mask = self.gen_attention_masks(segment_ids).to(device)
+        if AttentionMask:
+            attention_mask = self.gen_attention_masks(segment_ids).to(device)
+        else:
+            attention_mask = None
         feedforward_x = None
         for i in range(self.num_hidden_layers):
             if Debug:

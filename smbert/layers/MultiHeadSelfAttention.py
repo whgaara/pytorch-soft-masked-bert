@@ -50,9 +50,10 @@ class MultiHeadSelfAttention(nn.Module):
 
         # 防止padding补全的0经过softmax后影响结果，对每个0值都加一个很大的负数，这样softmax后也会约等于0
         # attention_mask的shape为：[batch_size, seq_len, seq_len]
-        add_mask = (1.0 - attention_mask.float()) * 1e9
-        add_mask = add_mask.unsqueeze(1)
-        attention_scores -= add_mask
+        if attention_mask:
+            add_mask = (1.0 - attention_mask.float()) * 1e9
+            add_mask = add_mask.unsqueeze(1)
+            attention_scores -= add_mask
 
         attention_scores = self.softmax(attention_scores)
         attention_scores = torch.matmul(attention_scores, v)

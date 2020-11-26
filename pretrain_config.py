@@ -15,6 +15,9 @@ PronunciationPath = '../data/char_meta.txt'
 # Debug开关
 Debug = False
 
+# attention_mask开关
+AttentionMask = False
+
 # 使用预训练模型开关
 UsePretrain = True
 
