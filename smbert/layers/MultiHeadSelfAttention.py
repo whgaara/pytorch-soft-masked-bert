@@ -56,8 +56,9 @@ class MultiHeadSelfAttention(nn.Module):
             attention_scores -= add_mask
 
         attention_scores = self.softmax(attention_scores)
-        attention_scores = torch.matmul(attention_scores, v)
         attention_scores = self.dropout(attention_scores)
+        attention_scores = torch.matmul(attention_scores, v)
+        attention_scores = attention_scores.permute(0, 2, 1, 3).contiguous()
         attention_scores = attention_scores.view([batch_size, seq_len, self.out_dim])
         attention_scores = self.o_dense(attention_scores)
         return attention_scores
