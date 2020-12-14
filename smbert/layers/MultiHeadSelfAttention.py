@@ -52,7 +52,6 @@ class MultiHeadSelfAttention(nn.Module):
         # attention_mask的shape为：[batch_size, seq_len, seq_len]
         if attention_mask:
             add_mask = (1.0 - attention_mask.float()) * 1e9
-            add_mask = add_mask.unsqueeze(1)
             attention_scores -= add_mask
 
         attention_scores = self.softmax(attention_scores)

@@ -46,25 +46,7 @@ class SMBertMlm(nn.Module):
 
     @staticmethod
     def gen_attention_masks(segment_ids):
-        def gen_attention_mask(segment_id):
-            dim = segment_id.size()[-1]
-            attention_mask = torch.zeros([dim, dim], dtype=torch.int64)
-            end_point = 0
-            for i, segment in enumerate(segment_id.tolist()):
-                if segment:
-                    end_point = i
-                else:
-                    break
-            for i in range(end_point + 1):
-                for j in range(end_point + 1):
-                    attention_mask[i][j] = 1
-            return attention_mask
-        attention_masks = []
-        segment_ids = segment_ids.tolist()
-        for segment_id in segment_ids:
-            attention_mask = gen_attention_mask(torch.tensor(segment_id))
-            attention_masks.append(attention_mask.tolist())
-        return torch.tensor(attention_masks)
+        return segment_ids[:, None, None, :]
 
     def load_pretrain(self, path=PretrainPath):
         pretrain_model_dict = torch.load(path)
