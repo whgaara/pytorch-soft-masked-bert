@@ -223,7 +223,7 @@ class SMBertDataSet(Dataset):
         return onehot_masked_labels
 
 
-class RobertaTestSet(Dataset):
+class SMBertEvalSet(Dataset):
     def __init__(self, test_path):
         self.tokenizer = Tokenizer(VocabPath)
         self.test_path = test_path

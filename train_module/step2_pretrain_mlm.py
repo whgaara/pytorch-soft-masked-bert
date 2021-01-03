@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from smbert.data.mlm_dataset import *
+from smbert.data.smbert_dataset import *
 from smbert.layers.SM_Bert_mlm import SMBertMlm
 
 
@@ -23,8 +23,8 @@ if __name__ == '__main__':
         print('完成加载预训练模型！')
 
     dataset = SMBertDataSet(CorpusPath, onehot_type)
-    dataloader = DataLoader(dataset=dataset, batch_size=BatchSize, shuffle=True, drop_last=True)
-    testset = RobertaTestSet(TestPath)
+    # dataloader = DataLoader(dataset=dataset, batch_size=BatchSize, shuffle=True, drop_last=True)
+    testset = SMBertEvalSet(TestPath)
 
     optim = Adam(soft_masked_bert.parameters(), lr=MLMLearningRate)
     criterion = nn.CrossEntropyLoss().to(device)
@@ -34,9 +34,9 @@ if __name__ == '__main__':
         if Debug:
             print('第%s个Epoch %s' % (epoch, get_time()))
         soft_masked_bert.train()
-        data_iter = tqdm(enumerate(dataloader),
+        data_iter = tqdm(enumerate(dataset),
                          desc='EP_%s:%d' % ('train', epoch),
-                         total=len(dataloader),
+                         total=len(dataset),
                          bar_format='{l_bar}{r_bar}')
         print_loss = 0.0
         for i, data in data_iter:

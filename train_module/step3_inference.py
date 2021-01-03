@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 from char_sim import CharFuncs
 from pretrain_config import PretrainPath, device, PronunciationPath, SentenceLength
-from smbert.data.mlm_dataset import DataFactory
+from smbert.data.smbert_dataset import DataFactory
 
 
 def curve(confidence, similarity):

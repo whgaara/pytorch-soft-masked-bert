@@ -16,7 +16,7 @@ PronunciationPath = '../data/char_meta.txt'
 Debug = False
 
 # attention_mask开关
-AttentionMask = False
+AttentionMask = True
 
 # 使用预训练模型开关
 UsePretrain = True
@@ -31,7 +31,7 @@ else:
 MLMLearningRate = 1e-4
 RepeatNum = 1
 BatchSize = 16
-SentenceLength = 128
+SentenceLength = 512
 PretrainPath = '../checkpoint/finetune/mlm_trained_%s.model' % SentenceLength
 # ## MLM训练调试参数结束 ## #
 
