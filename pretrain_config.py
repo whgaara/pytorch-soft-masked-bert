@@ -4,13 +4,13 @@ import torch
 cuda_condition = torch.cuda.is_available()
 device = torch.device('cuda:0' if cuda_condition else 'cpu')
 
-VocabPath = '../checkpoint/pretrain/vocab.txt'
+VocabPath = 'checkpoint/pretrain/vocab.txt'
 
 # ## mlm模型文件路径 ## #
-SourcePath = '../data/src_data/src_data.txt'
-CorpusPath = '../data/train_data/train.txt'
-TestPath = '../data/test_data/test.txt'
-PronunciationPath = '../data/char_meta.txt'
+SourcePath = 'data/src_data/src_data.txt'
+CorpusPath = 'data/train_data/train.txt'
+TestPath = 'data/test_data/test.txt'
+PronunciationPath = 'data/char_meta.txt'
 
 # Debug开关
 Debug = False
@@ -21,6 +21,9 @@ AttentionMask = True
 # 使用预训练模型开关
 UsePretrain = True
 
+# mask方式
+AllMask = False
+
 # ## MLM训练调试参数开始 ## #
 MLMEpochs = 16
 WordGenTimes = 10
@@ -29,10 +32,9 @@ if WordGenTimes > 1:
 else:
     RanWrongDivisor = 0.15
 MLMLearningRate = 1e-4
-RepeatNum = 1
 BatchSize = 16
 SentenceLength = 512
-PretrainPath = '../checkpoint/finetune/mlm_trained_%s.model' % SentenceLength
+FinetunePath = 'checkpoint/finetune/mlm_trained_%s.model' % SentenceLength
 # ## MLM训练调试参数结束 ## #
 
 # ## MLM通用参数 ## #

@@ -32,54 +32,23 @@ class DataFactory(object):
         else:
             return np.random.randint(0, self.vocab_size)
 
-    def texts_to_ids(self, texts):
-        texts_ids = []
-        for text in texts:
-            # 处理每个句子
-            for word in text:
-                # text_ids首位分别是cls和sep，这里暂时去除
-                word_tokes = self.tokenizer.tokenize(text=word)[1:-1]
-                words_ids = self.tokenizer.tokens_to_ids(word_tokes)
-                texts_ids.append(words_ids)
-        return texts_ids
-
     def ids_to_mask(self, texts_ids):
         instances = []
-        total_ids = []
-        total_masks = []
+        tmp_ids = []
+        tmp_masks = []
         # 为每个字或者词生成一个概率，用于判断是否mask
         mask_rates = np.random.random(len(texts_ids))
 
         for i, word_id in enumerate(texts_ids):
             # 为每个字生成对应概率
-            total_ids.extend(word_id)
+            tmp_ids.append(word_id)
             if mask_rates[i] < MaskRate:
-                # 因为word_id可能是一个字，也可能是一个词
-                for sub_id in word_id:
-                    total_masks.append(self.__token_process(sub_id))
+                tmp_masks.append(self.__token_process(word_id))
             else:
-                total_masks.extend([0]*len(word_id))
-
-        # 每个实例的最大长度为512，因此对一个段落进行裁剪
-        # 510 = 512 - 2，给cls和sep留的位置
-        for i in range(math.ceil(len(total_ids)/(SentenceLength - 2))):
-            tmp_ids = [self.token_cls_id]
-            tmp_masks = [self.token_pad_id]
-            tmp_ids.extend(total_ids[i*(SentenceLength - 2): min((i+1)*(SentenceLength - 2), len(total_ids))])
-            tmp_masks.extend(total_masks[i*(SentenceLength - 2): min((i+1)*(SentenceLength - 2), len(total_masks))])
-            # 不足512的使用padding补全
-            diff = SentenceLength - len(tmp_ids)
-            if diff == 1:
-                tmp_ids.append(self.token_sep_id)
-                tmp_masks.append(self.token_pad_id)
-            else:
-                # 添加结束符
-                tmp_ids.append(self.token_sep_id)
-                tmp_masks.append(self.token_pad_id)
-                # 将剩余部分padding补全
-                tmp_ids.extend([self.token_pad_id] * (diff - 1))
-                tmp_masks.extend([self.token_pad_id] * (diff - 1))
-            instances.append([tmp_ids, tmp_masks])
+                tmp_masks.append(0)
+        tmp_ids = [101] + tmp_ids + [102]
+        tmp_masks = [0] + tmp_masks + [0]
+        instances.append([tmp_ids, tmp_masks])
         return instances
 
     def ids_all_mask(self, texts_ids, tokenid2count):
@@ -125,134 +94,119 @@ class DataFactory(object):
 
 
 class SMBertDataSet(Dataset):
-    def __init__(self, corpus_path, onehot_type=False):
+    def __init__(self, corpus_path):
         self.corpus_path = corpus_path
-        self.onehot_type = onehot_type
         self.smbert_data = DataFactory()
-        self.src_lines = []
         self.tar_lines = []
+        self.batch_group = []
         self.tokenid_to_count = {}
-        for i in range(RepeatNum):
-            for texts in tqdm(self.__get_texts()):
-                texts_ids = self.smbert_data.texts_to_ids(texts)
-                self.src_lines.append(texts_ids)
-                # 收集词频
-                for tokenids in texts_ids:
-                    if isinstance(tokenids, list):
-                        for tokenid in tokenids:
-                            if tokenid in self.tokenid_to_count:
-                                self.tokenid_to_count[tokenid] += 1
-                            else:
-                                self.tokenid_to_count[tokenid] = 1
-                    else:
-                        tokenid = tokenids
+
+        self.__load_data()
+
+    def __load_data(self):
+        for texts in tqdm(self.__get_texts()):
+            texts_ids = self.smbert_data.tokenizer.tokens_to_ids(list(texts))
+            # 收集词频
+            for tokenids in texts_ids:
+                if isinstance(tokenids, list):
+                    for tokenid in tokenids:
                         if tokenid in self.tokenid_to_count:
                             self.tokenid_to_count[tokenid] += 1
                         else:
                             self.tokenid_to_count[tokenid] = 1
-        for line in self.src_lines:
-            instances = self.smbert_data.ids_all_mask(line, self.tokenid_to_count)
+                else:
+                    tokenid = tokenids
+                    if tokenid in self.tokenid_to_count:
+                        self.tokenid_to_count[tokenid] += 1
+                    else:
+                        self.tokenid_to_count[tokenid] = 1
+            # 基于batchsize组建instance
+            if AllMask:
+                instances = self.smbert_data.ids_all_mask(texts_ids, self.tokenid_to_count)
+            else:
+                instances = self.smbert_data.ids_to_mask(texts_ids)
             for instance in instances:
-                self.tar_lines.append(instance)
+                self.batch_group.append(instance)
+                if len(self.batch_group) == BatchSize:
+                    self.tar_lines.append(self.batch_group)
+                    self.batch_group = []
+        if len(self.batch_group) > 0:
+            self.tar_lines.append(self.batch_group)
+            self.batch_group = []
 
     def __get_texts(self):
         with open(self.corpus_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                yield [line]
+                yield line
+
+    def __gen_input_token(self, token_ids, mask_ids):
+        assert len(token_ids) == len(mask_ids)
+        input_token_ids = []
+        for token, mask in zip(token_ids, mask_ids):
+            tmp_ids = []
+            for i in range(len(token)):
+                if mask[i] == 0:
+                    tmp_ids.append(token[i])
+                else:
+                    tmp_ids.append(mask[i])
+            input_token_ids.append(tmp_ids)
+        return input_token_ids
 
     def __len__(self):
         return len(self.tar_lines)
 
     def __getitem__(self, item):
         output = {}
-        instance = self.tar_lines[item]
-        token_ids = instance[0]
-        mask_ids = instance[1]
-        is_masked = []
-        for i, id in enumerate(mask_ids):
-            if id != 0:
-                is_masked.append(i)
+        instances = self.tar_lines[item]
+        token_ids = [x[0] for x in instances]
+        mask_ids = [x[1] for x in instances]
+        position_ids = []
         input_token_ids = self.__gen_input_token(token_ids, mask_ids)
-        segment_ids = [1 if x else 0 for x in token_ids]
-        if self.onehot_type:
-            # 全体onehot生成非常耗时，暂时注释，需要时可使用
-            onehot_labels = self.__id_to_onehot(token_ids)
-            # 只针对mask结果进行onehot
-            mask_onehot_labels = self.__maskid_to_onehot(token_ids, is_masked)
-            output['onehot_labels'] = onehot_labels
-            output['mask_onehot_labels'] = mask_onehot_labels
 
-        output['input_token_ids'] = input_token_ids
-        output['token_ids_labels'] = token_ids
-        output['is_masked'] = is_masked
-        output['segment_ids'] = segment_ids
+        # 构建batch数据
+        batch_max = max([len(x) for x in input_token_ids])
+        for i in range(len(input_token_ids)):
+            for j in range(batch_max - len(input_token_ids[i])):
+                input_token_ids[i].append(0)
+                token_ids[i].append(0)
+
+        # 构建segment_ids
+        segment_ids = []
+        for x in input_token_ids:
+            segment_ids.append([1 if y else 0 for y in x])
+
+        # 构建position_ids
+        for x in token_ids:
+            position_ids.append([y for y in range(batch_max)])
+
+        output['batch_inputs'] = input_token_ids
+        output['batch_position'] = position_ids
+        output['batch_segments'] = segment_ids
+        output['batch_labels'] = token_ids
 
         instance = {k: torch.tensor(v, dtype=torch.long) for k, v in output.items()}
         return instance
 
-    def __gen_input_token(self, token_ids, mask_ids):
-        assert len(token_ids) == len(mask_ids)
-        input_token_ids = []
-        for token, mask in zip(token_ids, mask_ids):
-            if mask == 0:
-                input_token_ids.append(token)
-            else:
-                input_token_ids.append(mask)
-        return input_token_ids
-
-    def __id_to_onehot(self, token_ids):
-        onehot_labels = []
-        onehot_pad = [0] * VocabSize
-        onehot_pad[0] = 1
-        for i in token_ids:
-            tmp = [0 for j in range(VocabSize)]
-            if i == 0:
-                onehot_labels.append(onehot_pad)
-            else:
-                tmp[i] = 1
-                onehot_labels.append(tmp)
-        return onehot_labels
-
-    def __maskid_to_onehot(self, token_ids, is_masked):
-        onehot_masked_labels = []
-        for i in is_masked:
-            onehot_labels = [0] * VocabSize
-            onehot_labels[token_ids[i]] = 1
-            onehot_masked_labels.append(onehot_labels)
-        return onehot_masked_labels
-
 
 class SMBertEvalSet(Dataset):
-    def __init__(self, test_path):
+    def __init__(self, eval_path):
         self.tokenizer = Tokenizer(VocabPath)
-        self.test_path = test_path
-        self.test_lines = []
+        self.eval_path = eval_path
+        self.eval_lines = []
         self.label_lines = []
+
+        self.__load_data()
+
+    def __load_data(self):
         # 读取数据
-        with open(self.test_path, 'r', encoding='utf-8') as f:
+        with open(self.eval_path, 'r', encoding='utf-8') as f:
             for line in f:
                 if line:
                     line = line.strip()
                     line_list = line.split('-***-')
-                    self.test_lines.append(line_list[1])
+                    self.eval_lines.append(line_list[1])
                     self.label_lines.append(line_list[0])
-
-    def __len__(self):
-        return len(self.label_lines)
-
-    def __getitem__(self, item):
-        output = {}
-        test_text = self.test_lines[item]
-        label_text = self.label_lines[item]
-        test_token = self.__gen_token(test_text)
-        label_token = self.__gen_token(label_text)
-        segment_ids = [1 if x else 0 for x in label_token]
-        output['input_token_ids'] = test_token
-        output['token_ids_labels'] = label_token
-        output['segment_ids'] = segment_ids
-        instance = {k: torch.tensor(v, dtype=torch.long) for k, v in output.items()}
-        return instance
 
     def __gen_token(self, tokens):
         tar_token_ids = [101]
@@ -262,7 +216,22 @@ class SMBertEvalSet(Dataset):
             token_id = self.tokenizer.token_to_id(token)
             tar_token_ids.append(token_id)
         tar_token_ids.append(102)
-        if len(tar_token_ids) < SentenceLength:
-            for i in range(SentenceLength - len(tar_token_ids)):
-                tar_token_ids.append(0)
         return tar_token_ids
+
+    def __len__(self):
+        return len(self.label_lines)
+
+    def __getitem__(self, item):
+        output = {}
+        eval_text = self.eval_lines[item]
+        label_text = self.label_lines[item]
+        eval_token = self.__gen_token(eval_text)
+        label_token = self.__gen_token(label_text)
+        position_ids = [i for i in range(len(eval_token))]
+        segment_ids = [1 if x else 0 for x in label_token]
+        output['eval_token'] = eval_token
+        output['eval_position'] = position_ids
+        output['eval_segment'] = segment_ids
+        output['eval_label'] = label_token
+        instance = {k: torch.tensor(v, dtype=torch.long) for k, v in output.items()}
+        return instance

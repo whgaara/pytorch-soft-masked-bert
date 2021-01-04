@@ -5,7 +5,7 @@ import torch
 
 from tqdm import tqdm
 from char_sim import CharFuncs
-from pretrain_config import PretrainPath, device, PronunciationPath, SentenceLength
+from pretrain_config import FinetunePath, device, PronunciationPath, SentenceLength
 from smbert.data.smbert_dataset import DataFactory
 
 
@@ -27,7 +27,7 @@ class Inference(object):
         self.sen_invalid = 0
         self.sen_wrong = 0
         self.mode = mode
-        self.model = torch.load(PretrainPath).to(device).eval()
+        self.model = torch.load(FinetunePath).to(device).eval()
         self.char_func = CharFuncs(PronunciationPath)
         self.smbert_data = DataFactory()
         print('加载模型完成！')

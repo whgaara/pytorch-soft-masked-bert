@@ -45,12 +45,12 @@ class MultiHeadSelfAttention(nn.Module):
         v = v.transpose(1, 2)
         # q与k的转置相乘得到：[batch_size, head, seq_len, seq_len]
         attention_scores = torch.matmul(q, k.transpose(2, 3))
-        # 因为q、k相乘，结果变大，因此对结果除以根号512
+        # 因为q、k相乘，结果变大，因此对结果除以根号64
         attention_scores = attention_scores / math.sqrt(float(self.attention_head_size))
 
         # 防止padding补全的0经过softmax后影响结果，对每个0值都加一个很大的负数，这样softmax后也会约等于0
         # attention_mask的shape为：[batch_size, seq_len, seq_len]
-        if attention_mask:
+        if AttentionMask:
             add_mask = (1.0 - attention_mask.float()) * 1e9
             attention_scores -= add_mask
 

@@ -48,16 +48,16 @@ class SMBertMlm(nn.Module):
     def gen_attention_masks(segment_ids):
         return segment_ids[:, None, None, :]
 
-    def load_pretrain(self, path=PretrainPath):
+    def load_pretrain(self, path=FinetunePath):
         pretrain_model_dict = torch.load(path)
         finetune_model_dict = pretrain_model_dict.state_dict()
         self.load_state_dict(finetune_model_dict)
 
-    def forward(self, input_token, segment_ids):
+    def forward(self, input_token, position_ids, segment_ids):
         # embedding
         if Debug:
             print('获取embedding %s' % get_time())
-        embedding_x, mask_embedding_x = self.smbert_emd(input_token, segment_ids)
+        embedding_x, mask_embedding_x = self.smbert_emd(input_token, position_ids, segment_ids)
         if Debug:
             print('获取attention_mask %s' % get_time())
 
