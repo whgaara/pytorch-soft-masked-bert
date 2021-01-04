@@ -84,11 +84,11 @@ if __name__ == '__main__':
 
                 # 累计数值
                 test_count += input_len
-                for i in range(input_len):
-                    batch_labels = label_list[i + 1]
-                    if batch_labels == output_topk[i][0]:
+                for j in range(input_len):
+                    batch_labels = label_list[j + 1]
+                    if batch_labels == output_topk[j][0]:
                         top1_count += 1
-                    if batch_labels in output_topk[i]:
+                    if batch_labels in output_topk[j]:
                         top5_count += 1
 
             if test_count:
