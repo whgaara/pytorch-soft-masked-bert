@@ -34,47 +34,22 @@ class Inference(object):
 
     def get_id_from_text(self, text):
         assert isinstance(text, str)
-        inputs = []
-        segments = []
-        text = [text]
-        ids = self.smbert_data.texts_to_ids(text)
-        inputs.append(self.smbert_data.token_cls_id)
-        segments.append(1)
-        for id in ids:
-            if len(inputs) < SentenceLength - 1:
-                if isinstance(id, list):
-                    for x in id:
-                        inputs.append(x)
-                        segments.append(1)
-                else:
-                    inputs.append(id)
-                    segments.append(1)
-            else:
-                inputs.append(self.smbert_data.token_sep_id)
-                segments.append(1)
-                break
-
-        if len(inputs) != len(segments):
-            print('len error!')
-            return None
-
-        if len(inputs) < SentenceLength - 1:
-            inputs.append(self.smbert_data.token_sep_id)
-            segments.append(1)
-            for i in range(SentenceLength - len(inputs)):
-                inputs.append(self.smbert_data.token_pad_id)
-                segments.append(self.smbert_data.token_pad_id)
+        ids = self.smbert_data.tokenizer.tokens_to_ids(text)
+        inputs = [self.smbert_data.token_cls_id] + ids + [self.smbert_data.token_sep_id]
+        position = [i for i in range(len(inputs))]
+        segments = [1 for x in inputs]
 
         inputs = torch.tensor(inputs).unsqueeze(0).to(device)
+        position = torch.tensor(position).unsqueeze(0).to(device)
         segments = torch.tensor(segments).unsqueeze(0).to(device)
-        return inputs, segments
+        return inputs, position, segments
 
     def get_topk(self, text):
         input_len = len(text)
-        text2id, segments = self.get_id_from_text(text)
+        text2id, position, segments = self.get_id_from_text(text)
         with torch.no_grad():
             result = []
-            output_tensor = self.model(text2id, segments)[:, 1:input_len + 1, :]
+            output_tensor = self.model(text2id, position, segments)[:, 1:input_len + 1, :]
             output_tensor = torch.nn.Softmax(dim=-1)(output_tensor)
             output_topk_prob = torch.topk(output_tensor, 5).values.squeeze(0).tolist()
             output_topk_indice = torch.topk(output_tensor, 5).indices.squeeze(0).tolist()
@@ -191,4 +166,4 @@ class Inference(object):
 
 if __name__ == '__main__':
     bert_infer = Inference()
-    bert_infer.inference_batch('../data/test_data/test.txt')
+    bert_infer.inference_batch('data/test_data/test.txt')
