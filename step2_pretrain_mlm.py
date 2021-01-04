@@ -99,6 +99,7 @@ if __name__ == '__main__':
 
                 # save
                 if top1_acc > best_top1:
+                    best_top1 = top1_acc
                     torch.save(soft_masked_bert.cpu(), FinetunePath)
                     soft_masked_bert.to(device)
                     print('EP:%d Model Saved on:%s\n' % (epoch, FinetunePath))
