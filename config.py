@@ -26,7 +26,7 @@ AllMask = True
 
 # ## MLM训练调试参数开始 ## #
 MLMEpochs = 16
-WordGenTimes = 10
+WordGenTimes = 3
 if WordGenTimes > 1:
     RanWrongDivisor = 1.0
 else:
