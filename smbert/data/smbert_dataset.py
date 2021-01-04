@@ -154,9 +154,8 @@ class SMBertDataSet(Dataset):
     def __getitem__(self, item):
         output = {}
         instances = self.tar_lines[item]
-        token_ids = [x[0] for x in instances]
-        mask_ids = [x[1] for x in instances]
-        position_ids = []
+        token_ids = copy.deepcopy([x[0] for x in instances])
+        mask_ids = copy.deepcopy([x[1] for x in instances])
         input_token_ids = self.__gen_input_token(token_ids, mask_ids)
 
         # 构建batch数据
@@ -172,6 +171,7 @@ class SMBertDataSet(Dataset):
             segment_ids.append([1 if y else 0 for y in x])
 
         # 构建position_ids
+        position_ids = []
         for x in token_ids:
             position_ids.append([y for y in range(batch_max)])
 
@@ -230,3 +230,10 @@ class SMBertEvalSet(Dataset):
         output['eval_label'] = label_token
         instance = {k: torch.tensor(v, dtype=torch.long) for k, v in output.items()}
         return instance
+
+
+if __name__ == '__main__':
+    tt = SMBertDataSet('../../data/train_data/train.txt')
+    for e in range(16):
+        for i, x in enumerate(tt):
+            print(i)
