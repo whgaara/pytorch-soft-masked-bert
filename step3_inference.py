@@ -5,7 +5,7 @@ import torch
 
 from tqdm import tqdm
 from char_sim import CharFuncs
-from pretrain_config import FinetunePath, device, PronunciationPath, SentenceLength
+from config import FinetunePath, device, PronunciationPath, SentenceLength
 from smbert.data.smbert_dataset import DataFactory
 
 

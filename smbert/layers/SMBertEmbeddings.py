@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from pretrain_config import device
+from config import device
 
 
 class SMBbertEmbeddings(nn.Module):

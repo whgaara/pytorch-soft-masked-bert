@@ -1,7 +1,7 @@
 import os
 import torch.nn as nn
 
-from pretrain_config import *
+from config import *
 from smbert.common.tokenizers import Tokenizer
 from smbert.layers.Transformer import Transformer
 from smbert.layers.SMBertEmbeddings import SMBbertEmbeddings

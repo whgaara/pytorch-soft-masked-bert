@@ -22,7 +22,7 @@ AttentionMask = True
 UsePretrain = True
 
 # mask方式
-AllMask = False
+AllMask = True
 
 # ## MLM训练调试参数开始 ## #
 MLMEpochs = 16

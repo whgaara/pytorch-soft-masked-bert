@@ -1,4 +1,4 @@
-from pretrain_config import *
+from config import *
 
 
 def check_srcdata_and_vocab(target_path):

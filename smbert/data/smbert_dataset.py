@@ -5,7 +5,7 @@ import numpy as np
 
 from tqdm import tqdm
 from smbert.common.tokenizers import Tokenizer
-from pretrain_config import *
+from config import *
 from torch.utils.data import Dataset
 
 
@@ -71,19 +71,16 @@ class DataFactory(object):
 
         tmp_ids.append(102)
         input_length = len(tmp_ids) - 2
-        if len(tmp_ids) < SentenceLength:
-            for i in range(SentenceLength - len(tmp_ids)):
-                tmp_ids.append(0)
 
         for i in range(1, input_length + 1):
             # 如果某字出现次数很少，则强行增加训练集
             if tokenid2count[tmp_ids[i]] < WordGenTimes:
                 for j in range(WordGenTimes - tokenid2count[tmp_ids[i]]):
-                    tmp_masks = [0] * SentenceLength
+                    tmp_masks = [0] * len(tmp_ids)
                     rand_num = np.random.randint(672, 7992)
                     tmp_masks[i] = rand_num
                     instances.append([tmp_ids, tmp_masks])
-            tmp_masks = [0] * SentenceLength
+            tmp_masks = [0] * len(tmp_ids)
             if random.random() < RanWrongDivisor:
                 rand_num = np.random.randint(672, 7992)
                 tmp_masks[i] = rand_num

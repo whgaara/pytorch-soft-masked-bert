@@ -1,7 +1,7 @@
 import random
 
 from common import check_srcdata_and_vocab
-from pretrain_config import *
+from config import *
 from smbert.common.tokenizers import Tokenizer
 
 
