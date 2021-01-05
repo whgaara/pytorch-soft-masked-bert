@@ -23,7 +23,7 @@ if __name__ == '__main__':
         print('完成加载本地预训练模型！')
 
     dataset = SMBertDataSet(CorpusPath)
-    testset = SMBertEvalSet(TestPath)
+    evalset = SMBertEvalSet(TestPath)
 
     optim = Adam(soft_masked_bert.parameters(), lr=MLMLearningRate)
     criterion = nn.CrossEntropyLoss().to(device)
@@ -63,17 +63,17 @@ if __name__ == '__main__':
 
         print('EP_%d mask loss:%s' % (epoch, print_loss))
 
-        # test
+        # eval
         with torch.no_grad():
             soft_masked_bert.eval()
-            test_count = 0
+            eval_count = 0
             top1_count = 0
             top5_count = 0
-            for test_data in testset:
-                eval_token = test_data['eval_token'].unsqueeze(0).to(device)
-                eval_position = test_data['eval_position'].unsqueeze(0).to(device)
-                eval_segment = test_data['eval_segment'].unsqueeze(0).to(device)
-                label_list = test_data['eval_label'].tolist()
+            for eval_data in evalset:
+                eval_token = eval_data['eval_token'].unsqueeze(0).to(device)
+                eval_position = eval_data['eval_position'].unsqueeze(0).to(device)
+                eval_segment = eval_data['eval_segment'].unsqueeze(0).to(device)
+                label_list = eval_data['eval_label'].tolist()
 
                 eval_token_list = eval_token.tolist()
                 input_len = len([x for x in eval_token_list[0] if x]) - 2
@@ -83,7 +83,7 @@ if __name__ == '__main__':
                 output_topk = torch.topk(output_tensor, 5).indices.squeeze(0).tolist()
 
                 # 累计数值
-                test_count += input_len
+                eval_count += input_len
                 for j in range(input_len):
                     batch_labels = label_list[j + 1]
                     if batch_labels == output_topk[j][0]:
@@ -91,10 +91,10 @@ if __name__ == '__main__':
                     if batch_labels in output_topk[j]:
                         top5_count += 1
 
-            if test_count:
-                top1_acc = float(top1_count) / float(test_count)
+            if eval_count:
+                top1_acc = float(top1_count) / float(eval_count)
                 print('top1纠正正确率：%s' % round(top1_acc, 2))
-                top5_acc = float(top5_count) / float(test_count)
+                top5_acc = float(top5_count) / float(eval_count)
                 print('top5纠正正确率：%s' % round(top5_acc, 2))
 
                 # save
