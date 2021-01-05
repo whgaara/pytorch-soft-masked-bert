@@ -19,9 +19,12 @@ Debug = False
 AttentionMask = True
 
 # 使用预训练模型开关
+# 目前未配置预外部训练模型
 UsePretrain = True
 
 # mask方式
+# True表示mask时会mask每个字，而且对于出现频率较低的字会多次mask，频率的限制由WordGenTimes决定
+# False表示按照bert的mask方式进行mask
 AllMask = True
 
 # ## MLM训练调试参数开始 ## #
