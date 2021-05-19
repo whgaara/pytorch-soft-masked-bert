@@ -86,4 +86,4 @@ class SMBertMlm(nn.Module):
         if Debug:
             print('进行mlm全连接 %s' % get_time())
         output = self.mlm(residual_x)
-        return output
+        return pi, output

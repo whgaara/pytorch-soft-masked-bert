@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 from tqdm import tqdm
+from random import choice
 from smbert.common.tokenizers import Tokenizer
 from config import *
 from torch.utils.data import Dataset
@@ -75,16 +76,22 @@ class DataFactory(object):
             if tokenid2count[tmp_ids[i]] < WordGenTimes:
                 for j in range(WordGenTimes - tokenid2count[tmp_ids[i]]):
                     tmp_masks = [0] * len(tmp_ids)
-                    rand_num = np.random.randint(672, 7992)
+                    tmp_isG = [0] * len(tmp_ids)
+                    # rand_num = np.random.randint(672, 7992)
+                    rand_num = choice([m for m in range(672, 7992) if m not in [tmp_ids[i]]])
                     tmp_masks[i] = rand_num
-                    instances.append([copy.deepcopy(tmp_ids), copy.deepcopy(tmp_masks)])
+                    tmp_isG[i] = 1
+                    instances.append([copy.deepcopy(tmp_ids), copy.deepcopy(tmp_masks), copy.deepcopy(tmp_isG)])
             tmp_masks = [0] * len(tmp_ids)
+            tmp_isG = [0] * len(tmp_ids)
             if random.random() < RanWrongDivisor:
-                rand_num = np.random.randint(672, 7992)
+                # rand_num = np.random.randint(672, 7992)
+                rand_num = choice([m for m in range(672, 7992) if m not in [tmp_ids[i]]])
                 tmp_masks[i] = rand_num
+                tmp_isG[i] = 1
             else:
                 tmp_masks[i] = tmp_ids[i]
-            instances.append([copy.deepcopy(tmp_ids), copy.deepcopy(tmp_masks)])
+            instances.append([copy.deepcopy(tmp_ids), copy.deepcopy(tmp_masks), copy.deepcopy(tmp_isG)])
         return instances
 
 
@@ -156,6 +163,7 @@ class SMBertDataSet(Dataset):
         instances = self.tar_lines[item]
         token_ids = copy.deepcopy([x[0] for x in instances])
         mask_ids = copy.deepcopy([x[1] for x in instances])
+        isG_ids = copy.deepcopy([x[2] for x in instances])
         input_token_ids = self.__gen_input_token(token_ids, mask_ids)
 
         # 构建batch数据
@@ -164,6 +172,7 @@ class SMBertDataSet(Dataset):
             for j in range(batch_max - len(input_token_ids[i])):
                 input_token_ids[i].append(0)
                 token_ids[i].append(0)
+                isG_ids[i].append(0)
 
         # 构建segment_ids
         segment_ids = []
@@ -179,8 +188,10 @@ class SMBertDataSet(Dataset):
         output['batch_position'] = position_ids
         output['batch_segments'] = segment_ids
         output['batch_labels'] = token_ids
-
+        output['batch_isG'] = isG_ids
         instance = {k: torch.tensor(v, dtype=torch.long) for k, v in output.items()}
+        instance['batch_isG'] = instance['batch_isG'].float()
+
         return instance
 
 

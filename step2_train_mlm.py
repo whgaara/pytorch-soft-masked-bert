@@ -9,6 +9,8 @@ from smbert.layers.SM_Bert_mlm import SMBertMlm
 
 
 if __name__ == '__main__':
+    # gama选用0.8是依赖论文中的数据
+    gama = 0.8
     best_top1 = 0
 
     if Debug:
@@ -26,7 +28,8 @@ if __name__ == '__main__':
     evalset = SMBertEvalSet(TestPath)
 
     optim = Adam(soft_masked_bert.parameters(), lr=MLMLearningRate)
-    criterion = nn.CrossEntropyLoss().to(device)
+    criterion_c = nn.CrossEntropyLoss().to(device)
+    criterion_d = nn.BCELoss().to(device)
 
     for epoch in range(MLMEpochs):
         # train
@@ -37,7 +40,8 @@ if __name__ == '__main__':
                          desc='EP_%s:%d' % ('train', epoch),
                          total=len(dataset),
                          bar_format='{l_bar}{r_bar}')
-        print_loss = 0.0
+        print_c_loss = 0.0
+        print_d_loss = 0.0
         for i, data in data_iter:
             if Debug:
                 print('生成数据 %s' % get_time())
@@ -46,22 +50,31 @@ if __name__ == '__main__':
             batch_position = data['batch_position']
             batch_segments = data['batch_segments']
             batch_labels = data['batch_labels']
+            batch_isG = data['batch_isG']
             if Debug:
                 print('获取数据 %s' % get_time())
-            mlm_output = soft_masked_bert(batch_input, batch_position, batch_segments).permute(0, 2, 1)
+            mlm_isG, mlm_output = soft_masked_bert(batch_input, batch_position, batch_segments)
+            mlm_output = mlm_output.permute(0, 2, 1)
+            mlm_isG = mlm_isG.squeeze(-1)
             if Debug:
                 print('完成前向 %s' % get_time())
-            mask_loss = criterion(mlm_output, batch_labels)
-            print_loss = mask_loss.item()
 
-            mask_loss.backward()
+            c_loss = criterion_c(mlm_output, batch_labels)
+            d_loss = criterion_d(mlm_isG, batch_isG)
+            loss = gama * c_loss + (1 - gama) * d_loss
+
+            print_c_loss = c_loss.item()
+            print_d_loss = d_loss.item()
+
+            loss.backward()
             optim.step()
             optim.zero_grad()
 
             if Debug:
                 print('完成反向 %s\n' % get_time())
 
-        print('EP_%d mask loss:%s' % (epoch, print_loss))
+        print('EP_%d mask c loss:%s' % (epoch, print_c_loss))
+        print('EP_%d mask d loss:%s' % (epoch, print_d_loss))
 
         # eval
         with torch.no_grad():
