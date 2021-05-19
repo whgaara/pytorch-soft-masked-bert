@@ -91,7 +91,7 @@ if __name__ == '__main__':
                 eval_token_list = eval_token.tolist()
                 input_len = len([x for x in eval_token_list[0] if x]) - 2
 
-                mlm_output = soft_masked_bert(eval_token, eval_position, eval_segment)[:, 1:input_len + 1, :]
+                mlm_isG, mlm_output = soft_masked_bert(eval_token, eval_position, eval_segment)[:, 1:input_len + 1, :]
                 output_tensor = torch.nn.Softmax(dim=-1)(mlm_output)
                 output_topk = torch.topk(output_tensor, 5).indices.squeeze(0).tolist()
 
