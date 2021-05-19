@@ -32,9 +32,7 @@ class SMBertMlm(nn.Module):
 
         # 申明网络
         self.smbert_emd = SMBbertEmbeddings(vocab_size=self.vocab_size, max_len=self.max_len, hidden_size=self.hidden_size)
-        self.bi_gru = BiGRU(self.hidden_size, self.hidden_size)
-        self.gru_dense = nn.Linear(self.hidden_size, self.hidden_size)
-        self.sigmoid = nn.Sigmoid()
+        self.bi_gru_linear = BiGRU(self.hidden_size, self.hidden_size)
         self.transformer_blocks = nn.ModuleList(
             Transformer(
                 hidden_size=self.hidden_size,
@@ -64,9 +62,7 @@ class SMBertMlm(nn.Module):
 
         # error detection
         # 这里要严格符合GRU模块的输入size，内部已将batch_first改为True
-        bi_gru_x = self.bi_gru(embedding_x)
-        bi_gru_x = self.gru_dense(bi_gru_x)
-        pi = self.sigmoid(bi_gru_x)
+        pi = self.bi_gru_linear(embedding_x)
         embedding_i = pi * mask_embedding_x + (1 - pi) * embedding_x
 
         # transformer
