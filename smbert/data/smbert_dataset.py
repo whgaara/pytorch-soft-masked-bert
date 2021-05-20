@@ -29,12 +29,14 @@ class DataFactory(object):
         elif rand <= 0.9:
             return token_id
         else:
-            return np.random.randint(0, self.vocab_size)
+            # 这是所有汉字的编号范畴，仅从汉字中抽取替换字符
+            return np.random.randint(672, 7992)
 
-    def ids_to_mask(self, texts_ids):
+    def ids_one_mask(self, texts_ids):
         instances = []
         tmp_ids = []
         tmp_masks = []
+        tmp_isG = []
         # 为每个字或者词生成一个概率，用于判断是否mask
         mask_rates = np.random.random(len(texts_ids))
 
@@ -43,11 +45,13 @@ class DataFactory(object):
             tmp_ids.append(word_id)
             if mask_rates[i] < MaskRate:
                 tmp_masks.append(self.__token_process(word_id))
+                tmp_isG.append(1)
             else:
                 tmp_masks.append(0)
+                tmp_isG.append(0)
         tmp_ids = [101] + tmp_ids + [102]
         tmp_masks = [0] + tmp_masks + [0]
-        instances.append([tmp_ids, tmp_masks])
+        instances.append([tmp_ids, tmp_masks, tmp_isG])
         return instances
 
     def ids_all_mask(self, texts_ids, tokenid2count):
@@ -77,7 +81,6 @@ class DataFactory(object):
                 for j in range(WordGenTimes - tokenid2count[tmp_ids[i]]):
                     tmp_masks = [0] * len(tmp_ids)
                     tmp_isG = [0] * len(tmp_ids)
-                    # rand_num = np.random.randint(672, 7992)
                     rand_num = choice([m for m in range(672, 7992) if m not in [tmp_ids[i]]])
                     tmp_masks[i] = rand_num
                     tmp_isG[i] = 1
@@ -85,7 +88,6 @@ class DataFactory(object):
             tmp_masks = [0] * len(tmp_ids)
             tmp_isG = [0] * len(tmp_ids)
             if random.random() < RanWrongDivisor:
-                # rand_num = np.random.randint(672, 7992)
                 rand_num = choice([m for m in range(672, 7992) if m not in [tmp_ids[i]]])
                 tmp_masks[i] = rand_num
                 tmp_isG[i] = 1
@@ -126,7 +128,7 @@ class SMBertDataSet(Dataset):
             if AllMask:
                 instances = self.smbert_data.ids_all_mask(texts_ids, self.tokenid_to_count)
             else:
-                instances = self.smbert_data.ids_to_mask(texts_ids)
+                instances = self.smbert_data.ids_one_mask(texts_ids)
             for instance in instances:
                 self.batch_group.append(instance)
                 if len(self.batch_group) == BatchSize:

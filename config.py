@@ -29,6 +29,7 @@ AllMask = True
 
 # ## MLM训练调试参数开始 ## #
 MLMEpochs = 16
+# 设置低频字的阈值，出现次数低于该频次的字将会被重复制作成WordGenTimes个样本
 WordGenTimes = 3
 if WordGenTimes > 1:
     RanWrongDivisor = 1.0
