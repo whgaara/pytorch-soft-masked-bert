@@ -42,6 +42,7 @@ if __name__ == '__main__':
                          bar_format='{l_bar}{r_bar}')
         print_c_loss = 0.0
         print_d_loss = 0.0
+        print_loss = 0.0
         for i, data in data_iter:
             if Debug:
                 print('生成数据 %s' % get_time())
@@ -65,6 +66,7 @@ if __name__ == '__main__':
 
             print_c_loss = c_loss.item()
             print_d_loss = d_loss.item()
+            print_loss = loss.item()
 
             loss.backward()
             optim.step()
@@ -75,6 +77,7 @@ if __name__ == '__main__':
 
         print('EP_%d mask c loss:%s' % (epoch, print_c_loss))
         print('EP_%d mask d loss:%s' % (epoch, print_d_loss))
+        print('EP_%d mask total loss:%s' % (epoch, print_loss))
 
         # eval
         with torch.no_grad():
