@@ -16,12 +16,12 @@ class Transformer(nn.Module):
         self.multi_attention = MultiHeadSelfAttention(
             attention_head_num=attention_head_num,
             attention_head_size=attention_head_size)
-        self.attention_layernorm = nn.LayerNorm(hidden_size)
+        self.attention_layernorm = nn.LayerNorm(hidden_size, eps=1e-12)
         self.feedforward = FeedForward(
                 hidden_size,
                 intermediate_size,
                 dropout_prob)
-        self.feedforward_layernorm = nn.LayerNorm(hidden_size)
+        self.feedforward_layernorm = nn.LayerNorm(hidden_size, eps=1e-12)
 
     def forward(self, x, attention_mask):
         attention_x = self.multi_attention(x, attention_mask)
