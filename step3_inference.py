@@ -49,7 +49,8 @@ class Inference(object):
         text2id, position, segments = self.get_id_from_text(text)
         with torch.no_grad():
             result = []
-            output_tensor = self.model(text2id, position, segments)[:, 1:input_len + 1, :]
+            output_isG, output_tensor = self.model(text2id, position, segments)
+            output_tensor = output_tensor[:, 1:input_len + 1, :]
             output_tensor = torch.nn.Softmax(dim=-1)(output_tensor)
             output_topk_prob = torch.topk(output_tensor, 5).values.squeeze(0).tolist()
             output_topk_indice = torch.topk(output_tensor, 5).indices.squeeze(0).tolist()
